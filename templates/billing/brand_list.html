@@ -13,7 +13,7 @@
   <a href="?export=pdf" class="btn btn-danger">📄 Exportar PDF</a>
 </div>
 
-<div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+<div class="card shadow-sm border-0 rounded-4 overflow-hidden mb-4">
   <div class="card-header bg-dark text-white border-0 py-3">
     <h5 class="mb-0">Listado de Marcas</h5>
   </div>
@@ -29,7 +29,8 @@
         </tr>
       </thead>
       <tbody>
-        {% for brand in brands %}
+        {# 🌟 CAMBIO 1: Ahora iteramos sobre page_obj en lugar de brands 🌟 #}
+        {% for brand in page_obj %}
         <tr>
           <td class="fw-semibold">{{ brand.name }}</td>
           <td class="text-muted small">{{ brand.description|default:"—"|truncatechars:60 }}</td>
@@ -54,5 +55,44 @@
     </table>
   </div>
 </div>
+
+{# 🌟 CAMBIO 2: CONTROLES DE PAGINACIÓN ADICIONADOS 🌟 #}
+{% if page_obj.paginator.num_pages > 1 %}
+<nav aria-label="Navegación de páginas" class="mb-4">
+  <ul class="pagination justify-content-center">
+    
+    {% if page_obj.has_previous %}
+      <li class="page-item">
+        <a class="page-link shadow-sm text-dark" href="?page=1">&laquo; Primero</a>
+      </li>
+      <li class="page-item">
+        <a class="page-link shadow-sm text-dark" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+      </li>
+    {% else %}
+      <li class="page-item disabled"><span class="page-link text-muted">&laquo; Primero</span></li>
+      <li class="page-item disabled"><span class="page-link text-muted">Anterior</span></li>
+    {% endif %}
+
+    <li class="page-item active" aria-current="page">
+      <span class="page-link bg-dark border-dark text-white shadow-sm fw-semibold">
+        Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+      </span>
+    </li>
+
+    {% if page_obj.has_next %}
+      <li class="page-item">
+        <a class="page-link shadow-sm text-dark" href="?page={{ page_obj.next_page_number }}">Siguiente</a>
+      </li>
+      <li class="page-item">
+        <a class="page-link shadow-sm text-dark" href="?page={{ page_obj.paginator.num_pages }}">Último &raquo;</a>
+      </li>
+    {% else %}
+      <li class="page-item disabled"><span class="page-link text-muted">Siguiente</span></li>
+      <li class="page-item disabled"><span class="page-link text-muted">Último &raquo;</span></li>
+    {% endif %}
+
+  </ul>
+</nav>
+{% endif %}
 
 {% endblock %}

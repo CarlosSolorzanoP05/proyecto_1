@@ -21,7 +21,7 @@ from shared.mixins import (
 from shared.decorators import audit_action, module_permission_required, staff_or_admin_required
 from decimal import Decimal
 import io
-
+from django.core.paginator import Paginator
 
 def _is_self_service_user(user):
     """
@@ -590,9 +590,13 @@ def brand_list(request):
             lambda obj: obj.created_at.strftime('%d/%m/%Y %H:%M'),
         ],
     )
+    paginator = Paginator(brands, 5)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
     if export:
         return export
-    return render(request, 'billing/brand_list.html', {'brands': brands})
+    return render(request, 'billing/brand_list.html', {'brands': brands, 'page_obj': page_obj})
 
 @login_required
 @staff_or_admin_required()
@@ -648,6 +652,7 @@ class ProductGroupListView(ModulePermissionRequiredMixin, ExportMixin, ListView)
     model = ProductGroup
     template_name = 'billing/productgroup_list.html'
     context_object_name = 'items'
+    paginate_by = 5
 
     export_filename = 'listado_grupos'
     export_headers = ['Nombre del Grupo', 'Activo', 'Creado']
@@ -692,6 +697,7 @@ class SupplierListView(ModulePermissionRequiredMixin, ExportMixin, ListView):
     model = Supplier
     template_name = 'billing/supplier_list.html'
     context_object_name = 'items'
+    paginate_by = 5
 
     export_filename = 'listado_proveedores'
     export_headers = ['Razón Social', 'Contacto', 'Correo', 'Teléfono', 'Dirección', 'Activo']
@@ -733,7 +739,7 @@ class ProductListView(ModulePermissionRequiredMixin, ExportMixin, ListView):
     model = Product
     template_name = 'billing/product_list.html'
     context_object_name = 'items'
-    paginate_by = 10
+    paginate_by = 5
 
     export_filename = 'listado_productos'
     export_headers = ['Name', 'Description', 'Brand', 'Group',
@@ -844,6 +850,7 @@ class CustomerListView(ModulePermissionRequiredMixin, ExportMixin, ListView):
     model = Customer
     template_name = 'billing/customer_list.html'
     context_object_name = 'items'
+    paginate_by = 5
 
     export_filename = 'listado_clientes'
     export_headers = ['Cédula/RUC', 'Nombre', 'Apellido', 'Correo', 'Teléfono', 'Dirección', 'Saldo Efectivo', 'Saldo Tarjeta', 'Activo']
@@ -885,6 +892,7 @@ class InvoiceListView(ModulePermissionRequiredMixin, ListView):
     model = Invoice
     template_name = 'billing/invoice_list.html'
     context_object_name = 'items'
+    paginate_by = 5
 
 class InvoiceCreateView(ModulePermissionRequiredMixin, SuccessMessageMixin, CreateView):
     permission_required = 'security.view_invoices'
