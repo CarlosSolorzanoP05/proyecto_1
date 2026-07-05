@@ -1,0 +1,137 @@
+{% extends 'billing/base.html' %}
+{% load security_tags %}
+{% block title %}Inicio - Sistema de Gestión{% endblock %}
+{% block content %}
+
+<!-- Bienvenida -->
+<div class="p-4 p-md-5 mb-4 bg-white rounded-4 shadow-sm border-0">
+  <h1 class="fw-bold mb-1">¡Bienvenido, {{ user.first_name|default:user.username }}!</h1>
+  <p class="text-muted mb-0">Sistema de Gestión de Ventas y Facturación</p>
+</div>
+
+<!-- Tarjetas de resumen: cada tarjeta se muestra solo si el Rol
+     del usuario tiene asignado el permiso del módulo correspondiente -->
+<div class="row g-3 mb-4">
+  {% if user|has_group:"Administrador" %}
+  <div class="col-6 col-md-3">
+    <div class="card text-center shadow-sm border-0 rounded-4 h-100 sg-metric-card">
+      <div class="card-body">
+        <div class="sg-metric-icon bg-primary bg-opacity-10 text-primary mx-auto mb-2">
+          <i class="fa-solid fa-tags"></i>
+        </div>
+        <h2 class="fw-bold mb-0">{{ total_brands }}</h2>
+        <p class="text-muted small mb-2">Marcas</p>
+        <a href="{% url 'billing:brand_list' %}" class="small text-decoration-none">Ver todas <i class="fa-solid fa-arrow-right ms-1"></i></a>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+  {% if user|has_permission:"view_products" %}
+  <div class="col-6 col-md-3">
+    <div class="card text-center shadow-sm border-0 rounded-4 h-100 sg-metric-card">
+      <div class="card-body">
+        <div class="sg-metric-icon bg-success bg-opacity-10 text-success mx-auto mb-2">
+          <i class="fa-solid fa-box"></i>
+        </div>
+        <h2 class="fw-bold mb-0">{{ total_products }}</h2>
+        <p class="text-muted small mb-2">Productos en Stock</p>
+        <a href="{% url 'billing:product_list' %}" class="small text-decoration-none">Ver todos <i class="fa-solid fa-arrow-right ms-1"></i></a>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if user|has_permission:"view_customers" %}
+  <div class="col-6 col-md-3">
+    <div class="card text-center shadow-sm border-0 rounded-4 h-100 sg-metric-card">
+      <div class="card-body">
+        <div class="sg-metric-icon bg-info bg-opacity-10 text-info mx-auto mb-2">
+          <i class="fa-solid fa-users"></i>
+        </div>
+        <h2 class="fw-bold mb-0">{{ total_customers }}</h2>
+        <p class="text-muted small mb-2">Clientes</p>
+        <a href="{% url 'billing:customer_list' %}" class="small text-decoration-none">Ver todos <i class="fa-solid fa-arrow-right ms-1"></i></a>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if user|has_permission:"view_invoices" %}
+  <div class="col-6 col-md-3">
+    <div class="card text-center shadow-sm border-0 rounded-4 h-100 sg-metric-card">
+      <div class="card-body">
+        <div class="sg-metric-icon bg-warning bg-opacity-10 text-warning mx-auto mb-2">
+          <i class="fa-solid fa-file-invoice-dollar"></i>
+        </div>
+        <h2 class="fw-bold mb-0">{{ total_invoices }}</h2>
+        <p class="text-muted small mb-2">Total de Ventas</p>
+        <a href="{% url 'billing:invoice_list' %}" class="small text-decoration-none">Ver todas <i class="fa-solid fa-arrow-right ms-1"></i></a>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if not user|has_permission:"view_products" and not user|has_permission:"view_customers" and not user|has_permission:"view_invoices" %}
+  <div class="col-12">
+    <div class="alert alert-secondary rounded-4 border-0 shadow-sm mb-0">
+      <i class="fa-solid fa-circle-info me-2"></i>
+      Tu Rol actual no tiene módulos de estadísticas asignados. Contacta a un Administrador si necesitas acceso.
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<div class="row g-3">
+  <!-- Últimas facturas: solo visible con permiso de Facturas -->
+  {% if user|has_permission:"view_invoices" %}
+  <div class="col-lg-7">
+    <div class="card shadow-sm border-0 rounded-4 h-100">
+      <div class="card-header bg-white border-0 pt-3 px-4">
+        <h5 class="mb-0 fw-semibold"><i class="fa-solid fa-clock-rotate-left me-2 text-muted"></i>Facturas Recientes</h5>
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-hover align-middle mb-0">
+          <thead><tr><th class="ps-4">#</th><th>Cliente</th><th>Fecha</th><th class="pe-4">Total</th></tr></thead>
+          <tbody>
+            {% for inv in recent_invoices %}
+            <tr>
+              <td class="ps-4">{{ inv.id }}</td>
+              <td>{{ inv.buyer_label }}</td>
+              <td>{{ inv.invoice_date|date:"d/m/Y" }}</td>
+              <td class="pe-4 fw-semibold">${{ inv.total }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="text-center text-muted py-4">Aún no hay facturas.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Productos con bajo stock: solo visible con permiso de Productos -->
+  {% if user|has_permission:"view_products" %}
+  <div class="col-lg-5">
+    <div class="card shadow-sm border-0 rounded-4 h-100">
+      <div class="card-header bg-white border-0 pt-3 px-4">
+        <h5 class="mb-0 fw-semibold"><i class="fa-solid fa-triangle-exclamation me-2 text-danger"></i>Alerta de Stock Bajo</h5>
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-hover align-middle mb-0">
+          <thead><tr><th class="ps-4">Producto</th><th class="pe-4">Stock</th></tr></thead>
+          <tbody>
+            {% for p in low_stock %}
+            <tr><td class="ps-4">{{ p.name }}</td><td class="pe-4"><span class="badge bg-danger rounded-pill">{{ p.stock }}</span></td></tr>
+            {% empty %}
+            <tr><td colspan="2" class="text-center text-success py-4">Todos los productos tienen stock.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

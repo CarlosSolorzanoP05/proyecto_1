@@ -1,0 +1,220 @@
+/* ============================================================
+   custom.css — Sistema de Gestión
+   Retoques sobre Bootstrap 5 para un look SaaS minimalista.
+   ============================================================ */
+
+:root {
+  --sg-bg: #f8f9fa;
+  --sg-surface: #ffffff;
+  --sg-navy: #1b2a4a;
+  --sg-navy-dark: #121e37;
+  --sg-graphite: #212529;
+  --sg-border: #eef0f3;
+  --sg-radius-lg: 1rem;
+  --sg-radius-md: .75rem;
+}
+
+body {
+  background-color: var(--sg-bg);
+  color: #2d3436;
+}
+
+/* ── Navbar ── */
+.sg-navbar {
+  background: linear-gradient(90deg, var(--sg-navy) 0%, var(--sg-navy-dark) 100%);
+}
+.sg-navbar .navbar-brand {
+  font-weight: 700;
+  letter-spacing: .02em;
+}
+.sg-navbar .nav-link {
+  font-weight: 500;
+  opacity: .85;
+  transition: opacity .15s ease;
+}
+.sg-navbar .nav-link:hover,
+.sg-navbar .nav-link.active {
+  opacity: 1;
+}
+.sg-role-badge {
+  font-weight: 600;
+  letter-spacing: .02em;
+}
+.sg-navbar .dropdown-menu {
+  border: none;
+  box-shadow: 0 .75rem 2rem rgba(0,0,0,.15);
+}
+
+/* ── Tarjetas y contenedores ── */
+.card {
+  border: none;
+}
+.card.shadow-sm {
+  box-shadow: 0 .125rem .5rem rgba(15, 23, 42, .06) !important;
+}
+
+/* ── Tablas ── */
+.table thead.table-dark th {
+  border-bottom: none;
+  font-weight: 600;
+  letter-spacing: .02em;
+  font-size: .85rem;
+  text-transform: uppercase;
+}
+.table-hover tbody tr:hover {
+  background-color: #f4f6fb;
+}
+
+/* ── Formularios: estilo dinámico "form-control-lg" para inputs
+   renderizados directamente desde Django ({{ form.field }}) sin
+   clase explícita en el widget. ── */
+.card form input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="file"]):not(.form-control):not(.form-select),
+.card form select:not(.form-select),
+.card form textarea:not(.form-control) {
+  display: block;
+  width: 100%;
+  padding: .65rem 1rem;
+  font-size: 1.05rem;
+  border: 1px solid #dee2e6;
+  border-radius: var(--sg-radius-md);
+  background-color: #fff;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.card form input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="file"]):focus,
+.card form select:focus,
+.card form textarea:focus {
+  outline: none;
+  border-color: #6c8ee8;
+  box-shadow: 0 0 0 .2rem rgba(27, 42, 74, .12);
+}
+.form-control, .form-select {
+  border-radius: var(--sg-radius-md);
+}
+.form-control-lg, .form-select-lg {
+  border-radius: var(--sg-radius-md);
+}
+
+/* ── Botones ── */
+.btn {
+  border-radius: var(--sg-radius-md);
+  font-weight: 500;
+}
+.btn-sm {
+  border-radius: .5rem;
+}
+
+/* ── Dashboard summary cards ── */
+.sg-metric-card {
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.sg-metric-card:hover {
+  transform: translateY(-2px);
+}
+.sg-metric-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--sg-radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+}
+
+/* ── Auth (login / signup) split screen ── */
+.sg-auth-wrapper {
+  min-height: calc(100vh - 72px);
+  display: flex;
+}
+.sg-auth-visual {
+  background: linear-gradient(160deg, var(--sg-navy) 0%, var(--sg-navy-dark) 100%);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 4rem 3rem;
+  position: relative;
+  overflow: hidden;
+}
+.sg-auth-visual::before {
+  content: "";
+  position: absolute;
+  width: 420px; height: 420px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.06);
+  top: -120px; right: -120px;
+}
+.sg-auth-visual::after {
+  content: "";
+  position: absolute;
+  width: 280px; height: 280px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.05);
+  bottom: -80px; left: -80px;
+}
+.sg-auth-form-col {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 1.5rem;
+  background-color: var(--sg-bg);
+}
+.sg-auth-card {
+  width: 100%;
+  max-width: 420px;
+}
+
+@media (max-width: 767.98px) {
+  .sg-auth-visual { display: none; }
+}
+
+/* ── Drag & Drop de imagen de producto ── */
+#id_photo {
+  /* El input real de Django sigue en el DOM (y sigue viajando en el
+     POST), pero se oculta visualmente: la interacción del usuario pasa
+     por la zona .sg-dropzone en su lugar. */
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.sg-dropzone {
+  height: 260px;
+  border: 2px dashed #c9d1dc;
+  border-radius: var(--sg-radius-lg);
+  background-color: #f8f9fb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color .15s ease, background-color .15s ease;
+}
+.sg-dropzone:hover {
+  border-color: #6c8ee8;
+  background-color: #f4f7ff;
+}
+.sg-dropzone.dragging {
+  border-color: #1b2a4a;
+  background-color: #eef1fa;
+}
+.sg-dropzone.has-image {
+  border-style: solid;
+  background-color: #fff;
+}
+.sg-dropzone img#photo-preview {
+  max-height: 260px;
+  max-width: 100%;
+  object-fit: contain;
+}
+.sg-dropzone-placeholder {
+  pointer-events: none;
+}
+.sg-dropzone-placeholder i {
+  color: #9aa5b5;
+}

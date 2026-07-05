@@ -1,0 +1,139 @@
+{% load security_tags %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Sistema de Gestión{% endblock %}</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+  <link href="{% static 'billing/css/custom.css' %}" rel="stylesheet">
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark sg-navbar shadow-sm sticky-top">
+  <div class="container-fluid px-4">
+    <a class="navbar-brand d-flex align-items-center gap-2" href="{% url 'billing:home' %}">
+      <i class="fa-solid fa-layer-group"></i>
+      <span>Sistema de Gestión</span>
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="nav">
+      <ul class="navbar-nav me-auto">
+        {% if user.is_authenticated %}
+        
+        <li class="nav-item"><a class="nav-link" href="{% url 'billing:home' %}"><i class="fa-solid fa-gauge me-1"></i>Dashboard</a></li>
+
+        {% if user|has_permission:"view_products" %}
+          <li class="nav-item"><a class="nav-link" href="{% url 'billing:product_list' %}"><i class="fa-solid fa-box me-1"></i>Productos</a></li>
+        {% endif %}
+
+        {% if user|has_permission:"view_purchases" %}
+          <li class="nav-item"><a class="nav-link" href="{% url 'purchasing:purchase_list' %}"><i class="fa-solid fa-cart-shopping me-1"></i>Compras</a></li>
+        {% endif %}
+
+        {% if user|has_permission:"view_invoices" %}
+          <li class="nav-item"><a class="nav-link" href="{% url 'billing:invoice_list' %}"><i class="fa-solid fa-file-invoice me-1"></i>Facturas</a></li>
+        {% endif %}
+
+        {% if user|has_permission:"view_reports" %}
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+            <i class="fa-solid fa-chart-line me-1"></i>Reportes
+          </a>
+          <ul class="dropdown-menu">
+            {% if user|has_group:"Administrador" %}
+              <li><a class="dropdown-item" href="{% url 'billing:brand_list' %}">Marcas</a></li>
+            {% endif %}
+
+            {% if user|has_permission:"view_products" %}
+              <li><a class="dropdown-item" href="{% url 'billing:productgroup_list' %}">Grupos de Productos</a></li>
+              <li><a class="dropdown-item" href="{% url 'billing:supplier_list' %}">Proveedores</a></li>
+            {% endif %}
+
+            {% if user|has_permission:"view_customers" %}
+              <li><a class="dropdown-item" href="{% url 'billing:customer_list' %}">Clientes</a></li>
+            {% endif %}
+          </ul>
+        </li>
+        {% endif %}
+
+        {% if user|has_permission:"view_security" %}
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle text-warning" href="#" role="button" data-bs-toggle="dropdown">
+            <i class="fa-solid fa-shield-halved me-1"></i>Security
+          </a>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="{% url 'user_list' %}"><i class="fa-solid fa-users me-2"></i>Control de Usuarios</a></li>
+            <li><a class="dropdown-item" href="{% url 'user_create' %}"><i class="fa-solid fa-user-plus me-2"></i>Nuevo Trabajador</a></li>
+            <li><a class="dropdown-item" href="{% url 'user_roles' %}"><i class="fa-solid fa-user-gear me-2"></i>Asignar Roles</a></li>
+          </ul>
+        </li>
+        {% endif %}
+
+        {% endif %}
+      </ul>
+      
+      <ul class="navbar-nav">
+      {% if user.is_authenticated %}
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" href="#" role="button" data-bs-toggle="dropdown">
+            <span class="rounded-circle bg-white bg-opacity-25 d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;">
+              <i class="fa-solid fa-user"></i>
+            </span>
+            <span>{{ user.first_name|default:user.username }}</span>
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end p-2">
+            <li class="px-2 py-1 text-center">
+              {% if user.is_superuser %}
+                <span class="badge bg-danger sg-role-badge w-100">SuperAdmin</span>
+              {% else %}
+                <span class="badge bg-secondary sg-role-badge w-100">
+                  {{ user.groups.all|join:", "|default:"Sin Rol Asignado" }}
+                </span>
+              {% endif %}
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <a class="dropdown-item" href="{% url 'my_profile' %}">
+                <i class="fa-solid fa-id-card me-2"></i>Mis Datos
+              </a>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <form method="post" action="{% url 'logout' %}" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="dropdown-item text-danger">
+                  <i class="fa-solid fa-right-from-bracket me-2"></i>Cerrar Sesión
+                </button>
+              </form>
+            </li>
+          </ul>
+        </li>
+      {% else %}
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'login' %}">Iniciar Sesión</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'billing:signup' %}">Registrarse</a>
+        </li>
+      {% endif %}
+    </ul>
+  </div>
+</nav>
+
+<div class="container-fluid px-4 mt-4">
+  {% if messages %}
+    {% for m in messages %}
+    <div class="alert alert-{% if m.tags == 'error' %}danger{% else %}{{ m.tags }}{% endif %} alert-dismissible fade show rounded-3 shadow-sm border-0">
+      {{ m }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+  {% endif %}
+  {% block content %}{% endblock %}
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

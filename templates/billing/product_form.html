@@ -1,0 +1,210 @@
+{% extends 'billing/base.html' %}
+{% block title %}Producto{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-10">
+    <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+      <div class="card-header bg-dark text-white border-0 py-3">
+        <h4 class="mb-0">📦 Crear Producto</h4>
+      </div>
+      <div class="card-body p-4">
+        <form method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+
+          <div class="row g-4">
+            <!-- Columna izquierda: foto + balance -->
+            <div class="col-md-4">
+              <label class="form-label fw-bold">Foto:</label>
+              <div id="photo-dropzone" class="sg-dropzone mb-2 {% if object.photo %}has-image{% endif %}">
+                <img id="photo-preview"
+                     src="{% if object.photo %}{{ object.photo.url }}{% endif %}"
+                     alt="{{ object.name|default:'Vista previa' }}"
+                     class="img-fluid {% if not object.photo %}d-none{% endif %}">
+                <div id="photo-placeholder" class="sg-dropzone-placeholder text-center text-muted px-3 {% if object.photo %}d-none{% endif %}">
+                  <i class="fa-solid fa-cloud-arrow-up fa-2x mb-2 d-block"></i>
+                  <span>Arrastra tu imagen aquí o haz clic para seleccionar</span>
+                </div>
+              </div>
+              {{ form.photo }}
+              {% for error in form.photo.errors %}
+                <div class="text-danger small">{{ error }}</div>
+              {% endfor %}
+
+              <div class="alert mt-3 mb-0 d-flex justify-content-between align-items-center"
+                   style="background-color: #d8f3ee;">
+                <strong class="text-success">Balance:</strong>
+                <strong id="balance-display" class="text-success fs-5">
+                  ${{ object.balance|default:"0.00"|floatformat:2 }}
+                </strong>
+              </div>
+            </div>
+
+            <!-- Columna derecha: datos del producto -->
+            <div class="col-md-8">
+              <div class="mb-3">
+                <label class="form-label fw-bold">Nombre:</label>
+                {{ form.name }}
+                {% for error in form.name.errors %}
+                  <div class="text-danger small">{{ error }}</div>
+                {% endfor %}
+              </div>
+
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label fw-bold">Marca:</label>
+                  {{ form.brand }}
+                  {% for error in form.brand.errors %}
+                    <div class="text-danger small">{{ error }}</div>
+                  {% endfor %}
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label fw-bold">Grupo:</label>
+                  {{ form.group }}
+                  {% for error in form.group.errors %}
+                    <div class="text-danger small">{{ error }}</div>
+                  {% endfor %}
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label fw-bold">Precio Unitario:</label>
+                  <div class="input-group">
+                    <span class="input-group-text">$</span>
+                    {{ form.unit_price }}
+                  </div>
+                  {% for error in form.unit_price.errors %}
+                    <div class="text-danger small">{{ error }}</div>
+                  {% endfor %}
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label fw-bold">Stock:</label>
+                  {{ form.stock }}
+                  {% for error in form.stock.errors %}
+                    <div class="text-danger small">{{ error }}</div>
+                  {% endfor %}
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label fw-bold">Proveedores:</label>
+                {{ form.suppliers }}
+                <small class="text-muted">Mantén Ctrl (Cmd) presionado para seleccionar múltiples proveedores.</small>
+                {% for error in form.suppliers.errors %}
+                  <div class="text-danger small">{{ error }}</div>
+                {% endfor %}
+              </div>
+
+              <div class="form-check form-switch mb-3">
+                {{ form.is_active }}
+                <label class="form-check-label fw-bold" for="{{ form.is_active.id_for_label }}">
+                  Activo
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-bold">Descripción:</label>
+            {{ form.description }}
+            {% for error in form.description.errors %}
+              <div class="text-danger small">{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <hr>
+          <button type="submit" class="btn btn-primary">Guardar</button>
+          <a href="{% url 'billing:product_list' %}" class="btn btn-secondary">Cancelar</a>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    "use strict";
+
+    const fileInput = document.getElementById('id_photo');
+    const dropzone = document.getElementById('photo-dropzone');
+    const preview = document.getElementById('photo-preview');
+    const placeholder = document.getElementById('photo-placeholder');
+
+    // Muestra la vista previa en miniatura de un archivo de imagen dado
+    // y oculta el texto "Arrastra tu imagen aquí...".
+    function showPreview(file) {
+      if (!file || file.type.indexOf('image/') !== 0) return;
+      const reader = new FileReader();
+      reader.onload = function (ev) {
+        preview.src = ev.target.result;
+        preview.classList.remove('d-none');
+        if (placeholder) placeholder.classList.add('d-none');
+        dropzone.classList.add('has-image');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // Click en cualquier parte de la zona abre el selector de archivos
+    // nativo (el <input type="file"> real de Django, oculto vía CSS).
+    dropzone.addEventListener('click', function () {
+      fileInput.click();
+    });
+
+    // Selección manual desde el diálogo de archivos
+    fileInput.addEventListener('change', function (e) {
+      const file = e.target.files[0];
+      if (file) showPreview(file);
+    });
+
+    // ── Drag and drop ──
+    ['dragover', 'dragenter'].forEach(function (evt) {
+      dropzone.addEventListener(evt, function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        dropzone.classList.add('dragging');
+      });
+    });
+
+    ['dragleave', 'dragend'].forEach(function (evt) {
+      dropzone.addEventListener(evt, function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        dropzone.classList.remove('dragging');
+      });
+    });
+
+    dropzone.addEventListener('drop', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      dropzone.classList.remove('dragging');
+
+      const files = e.dataTransfer.files;
+      if (!files || !files.length) return;
+      const file = files[0];
+
+      if (file.type.indexOf('image/') !== 0) return; // solo imágenes
+
+      // Asignamos el archivo soltado al input real de Django usando
+      // DataTransfer, que es la única forma soportada por el navegador
+      // de "programar" el contenido de un <input type="file">. Así el
+      // archivo viaja normalmente dentro del POST multipart/form-data,
+      // exactamente igual que si el usuario lo hubiera elegido a mano.
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      fileInput.files = dt.files;
+
+      showPreview(file);
+    });
+  })();
+
+  // Cálculo en vivo del balance = precio_unitario * stock
+  function actualizarBalance() {
+    const precio = parseFloat(document.getElementById('id_unit_price').value) || 0;
+    const stock = parseInt(document.getElementById('id_stock').value, 10) || 0;
+    const balance = (precio * stock).toFixed(2);
+    document.getElementById('balance-display').textContent = '$' + balance;
+  }
+  document.getElementById('id_unit_price').addEventListener('input', actualizarBalance);
+  document.getElementById('id_stock').addEventListener('input', actualizarBalance);
+</script>
+{% endblock %}

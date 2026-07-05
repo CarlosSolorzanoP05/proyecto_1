@@ -1,0 +1,259 @@
+{% extends 'billing/base.html' %}
+{% load security_tags %}
+{% block title %}Products{% endblock %}
+
+{% block content %}
+
+<style>
+  /* ── Tabla con imagen ── */
+  .tbl-photo {
+    width: 56px; height: 56px;
+    object-fit: cover;
+    border-radius: .5rem;
+    border: 1px solid #dee2e6;
+  }
+
+  /* ── Filtro dinámico ── */
+  .filter-field { display: none; }
+  .filter-field.d-block-active { display: block !important; }
+  #filterType { min-width: 220px; }
+</style>
+
+{# ── Encabezado ── #}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="mb-0">📦 Products</h2>
+  {% if user.is_superuser or user|has_group:"Administrador" or user|has_group:"Trabajador" %}
+    <a href="{% url 'billing:product_create' %}" class="btn btn-primary">+ Nuevo Producto</a>
+  {% endif %}
+</div>
+
+{# ── Panel de filtro dinámico ── #}
+<div class="card mb-4 shadow-sm border-0 rounded-4">
+  <div class="card-body">
+    <form method="get" action="" id="filterForm" class="row gx-3 gy-3 align-items-end">
+
+      {# Selector "Filtrar por" ── controla qué input(s) se muestran ── #}
+      <div class="col-auto">
+        <label class="form-label fw-semibold small text-uppercase text-muted mb-1">Filtrar por</label>
+        <select id="filterType" class="form-select">
+          <option value="all" {% if active_filter == 'all' %}selected{% endif %}>Mostrar Todos</option>
+          <option value="name" {% if active_filter == 'name' %}selected{% endif %}>Nombre</option>
+          <option value="brand" {% if active_filter == 'brand' %}selected{% endif %}>Marca</option>
+          <option value="group" {% if active_filter == 'group' %}selected{% endif %}>Categoría</option>
+          <option value="is_active" {% if active_filter == 'is_active' %}selected{% endif %}>Estado</option>
+        </select>
+      </div>
+
+      {# Nombre #}
+      <div class="col-auto filter-field" data-filter="name">
+        <label class="form-label fw-semibold small text-uppercase text-muted mb-1">Nombre</label>
+        <input type="text" name="name" class="form-control"
+               placeholder="Buscar por nombre…"
+               value="{{ filter_params.name|default:'' }}">
+      </div>
+
+      {# Marca #}
+      <div class="col-auto filter-field" data-filter="brand">
+        <label class="form-label fw-semibold small text-uppercase text-muted mb-1">Marca</label>
+        <select name="brand" class="form-select">
+          <option value="">— Todas las marcas —</option>
+          {% for b in brands %}
+          <option value="{{ b.pk }}"
+            {% if filter_params.brand == b.pk|stringformat:"s" %}selected{% endif %}>
+            {{ b.name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      {# Categoría / Grupo #}
+      <div class="col-auto filter-field" data-filter="group">
+        <label class="form-label fw-semibold small text-uppercase text-muted mb-1">Categoría</label>
+        <select name="group" class="form-select">
+          <option value="">— Todas las categorías —</option>
+          {% for g in groups %}
+          <option value="{{ g.pk }}"
+            {% if filter_params.group == g.pk|stringformat:"s" %}selected{% endif %}>
+            {{ g.name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      {# Estado #}
+      <div class="col-auto filter-field" data-filter="is_active">
+        <label class="form-label fw-semibold small text-uppercase text-muted mb-1">Estado</label>
+        <select name="is_active" class="form-select">
+          <option value="">— Todos —</option>
+          <option value="true"  {% if filter_params.is_active == 'true'  %}selected{% endif %}>Activo</option>
+          <option value="false" {% if filter_params.is_active == 'false' %}selected{% endif %}>Inactivo</option>
+        </select>
+      </div>
+      {# Acciones ── junto al campo activo ── #}
+      <div class="col-auto d-flex gap-2">
+        <button type="submit" class="btn btn-primary">
+          <i class="fa-solid fa-magnifying-glass me-1"></i>Aplicar Filtro
+        </button>
+        <a href="{% url 'billing:product_list' %}" class="btn btn-outline-secondary">
+          <i class="fa-solid fa-xmark me-1"></i>Limpiar
+        </a>
+      </div>
+
+      {# Exportar ── siempre visibles a la derecha ── #}
+      <div class="col-auto ms-md-auto d-flex gap-2">
+        <a href="?{{ query_string }}&export=excel" class="btn btn-success">
+          <i class="fa-solid fa-file-excel me-1"></i>Exportar Excel
+        </a>
+        <a href="?{{ query_string }}&export=pdf" class="btn btn-danger">
+          <i class="fa-solid fa-file-pdf me-1"></i>Exportar PDF
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
+{# ── Tabla de resultados ── #}
+<div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+  <div class="card-body p-0">
+    <table class="table table-hover align-middle bg-white rounded-3 shadow-sm overflow-hidden mb-0">
+      <thead class="table-dark">
+        <tr>
+          <th class="text-center" style="width:70px;">Foto</th>
+          <th>Nombre</th>
+          <th>Descripción</th>
+          <th>Marca</th>
+          <th>Grupo</th>
+          <th class="text-end">Precio</th>
+          <th class="text-center">Stock</th>
+          <th class="text-center">Activo</th>
+          <th>Proveedores</th>
+          <th class="text-center">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+        <tr>
+          {# Foto miniatura con fallback por defecto #}
+          <td class="text-center">
+            {% if item.photo %}
+              <img src="{{ item.photo.url }}" alt="{{ item.name }}" class="tbl-photo">
+            {% else %}
+              <img src="https://placehold.co/100x100?text=No+Image" alt="No image" class="tbl-photo">
+            {% endif %}
+          </td>
+          <td class="fw-semibold">{{ item.name }}</td>
+          <td class="text-muted small">
+            {% if item.description %}
+              {{ item.description|truncatechars:50 }}
+            {% else %}
+              <em>—</em>
+            {% endif %}
+          </td>
+          <td>{{ item.brand.name }}</td>
+          <td>{{ item.group.name }}</td>
+          <td class="text-end fw-semibold">${{ item.unit_price }}</td>
+          <td class="text-center">
+            {% if item.stock <= 5 %}
+              <span class="badge bg-danger">{{ item.stock }}</span>
+            {% elif item.stock <= 20 %}
+              <span class="badge bg-warning text-dark">{{ item.stock }}</span>
+            {% else %}
+              <span class="badge bg-success">{{ item.stock }}</span>
+            {% endif %}
+          </td>
+          <td class="text-center">
+            {% if item.is_active %}
+              <span class="badge bg-success">Sí</span>
+            {% else %}
+              <span class="badge bg-secondary">No</span>
+            {% endif %}
+          </td>
+          <td>
+            {% for s in item.suppliers.all %}
+              <span class="badge bg-info text-dark">{{ s.name }}</span>
+            {% empty %}
+              <span class="text-muted">—</span>
+            {% endfor %}
+          </td>
+          <td class="text-center text-nowrap">
+            <a href="{% url 'billing:product_detail' item.pk %}" class="btn btn-sm btn-info text-white">👁 Ver Detalle</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="10" class="text-center text-muted py-4">No se encontraron productos con esos criterios.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{# ── Paginación ── #}
+{% if is_paginated %}
+<nav class="mt-3" aria-label="Product pagination">
+  <ul class="pagination justify-content-center flex-wrap">
+    {% if page_obj.has_previous %}
+    <li class="page-item">
+      <a class="page-link" href="?{{ query_string }}&page=1">« Primera</a>
+    </li>
+    <li class="page-item">
+      <a class="page-link" href="?{{ query_string }}&page={{ page_obj.previous_page_number }}">‹ Anterior</a>
+    </li>
+    {% endif %}
+
+    {% for num in paginator.page_range %}
+      {% if page_obj.number == num %}
+        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+      {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+        <li class="page-item">
+          <a class="page-link" href="?{{ query_string }}&page={{ num }}">{{ num }}</a>
+        </li>
+      {% endif %}
+    {% endfor %}
+
+    {% if page_obj.has_next %}
+    <li class="page-item">
+      <a class="page-link" href="?{{ query_string }}&page={{ page_obj.next_page_number }}">Siguiente ›</a>
+    </li>
+    <li class="page-item">
+      <a class="page-link" href="?{{ query_string }}&page={{ paginator.num_pages }}">Última »</a>
+    </li>
+    {% endif %}
+  </ul>
+  <p class="text-center text-muted small">
+    Página {{ page_obj.number }} de {{ paginator.num_pages }}
+    &mdash; {{ paginator.count }} producto(s) encontrado(s)
+  </p>
+</nav>
+{% endif %}
+
+<script>
+(function () {
+  /* ── Filtro dinámico: muestra solo el input correspondiente al
+     tipo de filtro elegido en el select "Filtrar por". Los campos
+     ocultos se deshabilitan para que no viajen en el querystring. ── */
+  const select = document.getElementById('filterType');
+  const fields = document.querySelectorAll('.filter-field');
+
+  function applyVisibility(type) {
+    fields.forEach(function (field) {
+      const isActive = field.dataset.filter === type;
+      field.classList.toggle('d-block-active', isActive);
+      field.style.display = isActive ? (field.classList.contains('d-flex') ? 'flex' : 'block') : 'none';
+      field.querySelectorAll('input, select').forEach(function (el) {
+        el.disabled = !isActive;
+      });
+    });
+  }
+
+  if (select) {
+    select.addEventListener('change', function () {
+      applyVisibility(select.value);
+    });
+    applyVisibility(select.value);
+  }
+})();
+</script>
+
+{% endblock %}

@@ -1,0 +1,72 @@
+{% extends 'billing/base.html' %}
+{% block title %}Registrarse{% endblock %}
+{% block content %}
+<div class="row g-0 sg-auth-wrapper mx-n4 mt-n4">
+  <div class="col-md-6 sg-auth-visual d-none d-md-flex">
+    <div style="position:relative; z-index:1;">
+      <i class="fa-solid fa-user-plus fa-2x mb-4"></i>
+      <h2 class="fw-bold mb-3">Crea tu cuenta</h2>
+      <p class="opacity-75" style="max-width:380px;">
+        Únete al sistema para gestionar productos, compras y facturación
+        de forma centralizada.
+      </p>
+      <div class="mt-4 d-flex align-items-center gap-2">
+        <span class="badge bg-secondary sg-role-badge">Rol: Usuario</span>
+        <span class="small opacity-75">— los permisos de Admin / Trabajador se asignan luego</span>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6 sg-auth-form-col">
+    <div class="sg-auth-card">
+      <div class="card shadow-sm border-0 rounded-4">
+        <div class="card-body p-4 p-md-5">
+          <h4 class="fw-bold mb-1">Crear Cuenta</h4>
+          <p class="text-muted mb-4">Completa tus datos para registrarte</p>
+
+          <form method="post" id="signup-form">
+            {% csrf_token %}
+            {% for field in form %}
+            <div class="mb-3">
+              <label class="form-label fw-semibold">{{ field.label }}</label>
+              {{ field }}
+              {% if field.help_text %}<small class="text-muted">{{ field.help_text }}</small>{% endif %}
+              {% for error in field.errors %}
+              <div class="text-danger small mt-1">{{ error }}</div>
+              {% endfor %}
+              {% if field.name == 'password2' %}
+              <div id="password-match-msg" class="small mt-1"></div>
+              {% endif %}
+            </div>
+            {% endfor %}
+            <button type="submit" class="btn btn-success btn-lg w-100 mt-2">Registrarse</button>
+          </form>
+          <p class="mt-4 text-center text-muted">
+            ¿Ya tienes cuenta? <a href="{% url 'login' %}" class="text-decoration-none fw-semibold">Inicia sesión</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const pw1 = document.getElementById('id_password1');
+  const pw2 = document.getElementById('id_password2');
+  const msg = document.getElementById('password-match-msg');
+  if (!pw1 || !pw2 || !msg) return;
+  function check() {
+    if (!pw2.value) { msg.textContent = ''; return; }
+    if (pw1.value === pw2.value) {
+      msg.textContent = '✓ Las contraseñas coinciden';
+      msg.className = 'small mt-1 text-success';
+    } else {
+      msg.textContent = '✗ Las contraseñas no coinciden';
+      msg.className = 'small mt-1 text-danger';
+    }
+  }
+  pw1.addEventListener('input', check);
+  pw2.addEventListener('input', check);
+})();
+</script>
+{% endblock %}

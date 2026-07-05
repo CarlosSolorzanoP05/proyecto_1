@@ -1,0 +1,458 @@
+{% extends 'billing/base.html' %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<style>
+  .sg-doc-header .sg-field-label { font-size: .75rem; font-weight: 600; letter-spacing: .03em; text-transform: uppercase; color: #8a94a6; }
+  .sg-doc-header .sg-readonly-value { font-size: 1.05rem; font-weight: 600; color: #2d3436; }
+  #detail-table thead th { font-size: .78rem; font-weight: 600; letter-spacing: .02em; text-transform: uppercase; color: #6c757d; }
+  #detail-table td { vertical-align: middle; }
+  .sg-totals-box { min-width: 280px; }
+  #btn-add-row { transition: transform .15s ease; }
+  #btn-add-row:hover { transform: translateY(-1px); }
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="mb-0"><i class="fa-solid fa-file-invoice me-2 text-muted"></i>{{ title }}</h2>
+</div>
+
+<form method="post" id="invoice-form">
+  {% csrf_token %}
+
+  {# ── Sección superior: encabezado del documento ── #}
+  <div class="card border-0 shadow-sm mb-4 rounded-4 sg-doc-header">
+    <div class="card-body p-4">
+      <div class="row g-4">
+        {% if form.customer or form.user %}
+        <div class="col-md-3">
+          <div class="sg-field-label mb-1">Cliente Externo</div>
+          {{ form.customer }}
+          {% for error in form.customer.errors %}
+          <div class="text-danger small mt-1">{{ error }}</div>
+          {% endfor %}
+        </div>
+        <div class="col-md-3">
+          <div class="sg-field-label mb-1">Usuario del Sistema</div>
+          {{ form.user }}
+          {% for error in form.user.errors %}
+          <div class="text-danger small mt-1">{{ error }}</div>
+          {% endfor %}
+        </div>
+        <div class="col-12">
+          <div class="form-text">Selecciona un Cliente Externo <strong>o</strong> un Usuario del Sistema (no ambos).</div>
+          {% for error in form.non_field_errors %}
+          <div class="text-danger small mt-1">{{ error }}</div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="col-md-6">
+          <div class="sg-field-label mb-1">Cliente</div>
+          <div class="sg-readonly-value"><i class="fa-solid fa-user me-2"></i>{{ request.user.get_full_name|default:request.user.username }} <span class="badge bg-info text-dark ms-2">Autofactura</span></div>
+          <div class="form-text">Estás generando una factura a tu propio nombre.</div>
+        </div>
+        {% endif %}
+        <div class="col-6 col-md-2">
+          <div class="sg-field-label mb-1">Método de Pago</div>
+          {% if form.metodo_pago %}
+            {{ form.metodo_pago }}
+            {% for error in form.metodo_pago.errors %}
+            <div class="text-danger small mt-1">{{ error }}</div>
+            {% endfor %}
+          {% endif %}
+        </div>
+        <div class="col-6 col-md-2">
+          <div class="sg-field-label mb-1">N° de Factura</div>
+          <div class="sg-readonly-value">
+            {% if invoice %}{{ invoice.invoice_number }}{% else %}<span class="text-muted fw-normal fst-italic small">Auto-generado</span>{% endif %}
+          </div>
+        </div>
+        <div class="col-6 col-md-2">
+          <div class="sg-field-label mb-1">Fecha</div>
+          <div class="sg-readonly-value">
+            {% if invoice %}{{ invoice.invoice_date|date:"d/m/Y" }}{% else %}{% now "d/m/Y" %}{% endif %}
+          </div>
+        </div>
+        <div class="col-6 col-md-2">
+          <div class="sg-field-label mb-1">Estado</div>
+          <span class="badge bg-success rounded-pill px-3 py-2">Activa</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# ── Sección inferior: detalle de productos ── #}
+  <div class="card border-0 shadow-sm mb-3 rounded-4 overflow-hidden">
+    <div class="card-header bg-white border-0 pt-3 px-4">
+      <h6 class="mb-0 fw-semibold text-uppercase small text-muted">Detalle de la Factura</h6>
+    </div>
+    <div class="card-body p-0">
+      {{ formset.management_form }}
+      <div class="table-responsive">
+        <table class="table align-middle mb-0" id="detail-table">
+          <thead class="table-light">
+            <tr>
+              <th class="ps-4">Producto</th>
+              <th style="width:110px">Cantidad</th>
+              <th style="width:150px">Precio Unitario</th>
+              <th style="width:120px" class="text-end">Subtotal</th>
+              <th style="width:70px" class="pe-4">Acción</th>
+            </tr>
+          </thead>
+          <tbody id="detail-body">
+            {% for detail_form in formset %}
+            <tr class="detail-row">
+              <td class="ps-4">{{ detail_form.product }}</td>
+              <td>{{ detail_form.quantity }}</td>
+              <td>{{ detail_form.unit_price }}</td>
+              <td class="text-end fw-semibold"><span class="row-subtotal">0.00</span></td>
+              <td class="text-center pe-4">
+                <button type="button" class="btn btn-outline-danger btn-sm btn-remove-row" title="Eliminar">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+                <span class="d-none">{{ detail_form.DELETE }}</span>
+              </td>
+              {{ detail_form.id }}
+              {% for error in detail_form.errors.values %}
+                <td colspan="5" class="text-danger small">{{ error }}</td>
+              {% endfor %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  {# ── Añadir fila + totales ── #}
+  <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
+    <button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-3" id="btn-add-row">
+      <i class="fa-solid fa-plus me-1"></i>Añadir Producto
+    </button>
+
+    <div class="card border-0 shadow-sm rounded-4 sg-totals-box">
+      <div class="card-body p-3">
+        <div class="d-flex justify-content-between small text-muted mb-2">
+          <span>Subtotal</span>
+          <span>$<span id="total-subtotal">0.00</span></span>
+        </div>
+        <div class="d-flex justify-content-between small text-muted mb-2">
+          <span>IVA (15%)</span>
+          <span>$<span id="total-tax">0.00</span></span>
+        </div>
+        <hr class="my-2">
+        <div class="d-flex justify-content-between align-items-center">
+          <span class="fw-semibold">TOTAL</span>
+          <span class="fw-bold fs-4 text-primary">$<span id="total-total">0.00</span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mt-2">
+    <button type="submit" class="btn btn-primary btn-lg px-4">
+      {% if invoice %}<i class="fa-solid fa-floppy-disk me-2"></i>Actualizar Factura{% else %}<i class="fa-solid fa-check me-2"></i>Crear Factura{% endif %}
+    </button>
+    {% if invoice %}
+      <a href="{% url 'billing:invoice_detail' invoice.pk %}" class="btn btn-secondary btn-lg px-4">Cancelar</a>
+    {% else %}
+      <a href="{% url 'billing:invoice_list' %}" class="btn btn-secondary btn-lg px-4">Cancelar</a>
+    {% endif %}
+  </div>
+</form>
+
+<script>
+(function () {
+  "use strict";
+
+  // URL base para consultar precio de producto
+  const PRICE_API = "{% url 'billing:product_price' 0 %}".replace('/0/', '/');
+
+  // Prefijo del formset de Django (detectado desde el management form)
+  const TOTAL_FORMS_INPUT = document.getElementById('id_details-TOTAL_FORMS');
+  const PREFIX = 'details';
+
+  function getTotalForms() {
+    return parseInt(TOTAL_FORMS_INPUT.value, 10);
+  }
+  function setTotalForms(n) {
+    TOTAL_FORMS_INPUT.value = n;
+  }
+
+  // Plantilla "limpia" de una fila, capturada UNA sola vez al cargar la
+  // página (antes de que el usuario interactúe con nada). Se usa como
+  // base para crear filas nuevas, evitando arrastrar valores, opciones
+  // deshabilitadas o el id de una instancia real desde una fila ya
+  // manipulada por el usuario.
+  const rowTemplate = document.querySelector('#detail-body .detail-row').cloneNode(true);
+  (function cleanTemplate() {
+    rowTemplate.removeAttribute('style');
+    rowTemplate.querySelectorAll('input[type="hidden"]').forEach(function (el) {
+      if (/-id$/.test(el.name)) el.value = ''; // nunca heredar un pk real
+    });
+    rowTemplate.querySelectorAll('input[type="text"], input[type="number"]').forEach(function (el) {
+      el.value = '';
+    });
+    rowTemplate.querySelectorAll('select').forEach(function (sel) {
+      sel.selectedIndex = 0;
+      Array.from(sel.options).forEach(function (opt) {
+        opt.disabled = false;
+        opt.hidden = false;
+      });
+    });
+    rowTemplate.querySelectorAll('input[type="checkbox"]').forEach(function (chk) {
+      chk.checked = false;
+    });
+    const sub = rowTemplate.querySelector('.row-subtotal');
+    if (sub) sub.textContent = '0.00';
+  })();
+
+  // Renumera (form-0-, form-1-, ...) todas las filas que sigan presentes
+  // en el DOM y sincroniza TOTAL_FORMS del Management Form de Django.
+  // Al no destruir/recrear nodos (solo se cambian atributos id/name) los
+  // listeners ya enlazados con addEventListener se conservan intactos.
+  function reindexRows() {
+    const rows = Array.from(document.querySelectorAll('#detail-body .detail-row'));
+    rows.forEach(function (row, i) {
+      row.querySelectorAll('[name^="' + PREFIX + '-"]').forEach(function (el) {
+        el.name = el.name.replace(/^(details-)\d+(-.*)$/, '$1' + i + '$2');
+      });
+      row.querySelectorAll('[id^="id_' + PREFIX + '-"]').forEach(function (el) {
+        el.id = el.id.replace(/^(id_details-)\d+(-.*)$/, '$1' + i + '$2');
+      });
+    });
+    setTotalForms(rows.length);
+  }
+
+  // Recalcula subtotal de una fila y actualiza totales generales
+  function recalcRow(row) {
+    const qtyInput = row.querySelector('[id$="-quantity"]');
+    const priceInput = row.querySelector('[id$="-unit_price"]');
+    const subtotalSpan = row.querySelector('.row-subtotal');
+
+    const qty = parseFloat(qtyInput ? qtyInput.value : 0) || 0;
+    const price = parseFloat(priceInput ? priceInput.value : 0) || 0;
+    const sub = qty * price;
+    if (subtotalSpan) subtotalSpan.textContent = sub.toFixed(2);
+    recalcTotals();
+  }
+
+  // Suma todos los subtotales de filas visibles (no marcadas para eliminar)
+  function recalcTotals() {
+    let subtotal = 0;
+    document.querySelectorAll('#detail-body .detail-row').forEach(function (row) {
+      // Ignorar filas marcadas para DELETE
+      const deleteChk = row.querySelector('[id$="-DELETE"]');
+      if (deleteChk && deleteChk.checked) return;
+      // Ignorar filas ocultas (eliminadas via JS)
+      if (row.style.display === 'none') return;
+
+      const sub = parseFloat(row.querySelector('.row-subtotal')
+                                ? row.querySelector('.row-subtotal').textContent : 0) || 0;
+      subtotal += sub;
+    });
+    const tax = subtotal * 0.15;
+    const total = subtotal + tax;
+    document.getElementById('total-subtotal').textContent = subtotal.toFixed(2);
+    document.getElementById('total-tax').textContent = tax.toFixed(2);
+    document.getElementById('total-total').textContent = total.toFixed(2);
+  }
+
+  // ── Disponibilidad dinámica de productos: cuando un producto se elige
+  //    en una fila, se oculta/deshabilita esa misma opción en los
+  //    selectores de las demás filas (para no poder elegirlo dos veces).
+  //    Si el usuario cambia de producto o quita la fila, la opción
+  //    vuelve a estar disponible para las demás filas automáticamente.
+  function updateProductAvailability() {
+    const rows = Array.from(document.querySelectorAll('#detail-body .detail-row'));
+
+    const activeRows = rows.filter(function (row) {
+      if (row.style.display === 'none') return false;
+      const deleteChk = row.querySelector('[id$="-DELETE"]');
+      if (deleteChk && deleteChk.checked) return false;
+      return true;
+    });
+
+    const selectedValues = activeRows
+      .map(function (row) {
+        const sel = row.querySelector('[id$="-product"]');
+        return sel ? sel.value : '';
+      })
+      .filter(function (v) { return v; });
+
+    activeRows.forEach(function (row) {
+      const sel = row.querySelector('[id$="-product"]');
+      if (!sel) return;
+      const myValue = sel.value;
+      Array.from(sel.options).forEach(function (opt) {
+        if (!opt.value) return; // opción vacía "---------" siempre disponible
+        const usedInAnotherRow = selectedValues.indexOf(opt.value) !== -1 && opt.value !== myValue;
+        opt.disabled = usedInAnotherRow;
+        opt.hidden = usedInAnotherRow;
+      });
+    });
+  }
+
+  // ── Validación en vivo: un mismo producto no puede repetirse en dos
+  //    líneas de la misma factura. Se ejecuta en cada cambio relevante
+  //    (elegir producto, agregar/quitar fila, marcar DELETE). La
+  //    validación definitiva y autoritativa sigue estando en el backend
+  //    (BaseInvoiceDetailFormSet.clean en billing/forms.py); esto es
+  //    solo una capa de UX para avisar al usuario antes de enviar.
+  function checkDuplicateProducts() {
+    const rows = Array.from(document.querySelectorAll('#detail-body .detail-row'));
+    const counts = {};
+
+    rows.forEach(function (row) {
+      if (row.style.display === 'none') return;
+      const deleteChk = row.querySelector('[id$="-DELETE"]');
+      if (deleteChk && deleteChk.checked) return;
+      const productSelect = row.querySelector('[id$="-product"]');
+      if (productSelect && productSelect.value) {
+        counts[productSelect.value] = (counts[productSelect.value] || 0) + 1;
+      }
+    });
+
+    let hasDuplicate = false;
+
+    rows.forEach(function (row) {
+      const productSelect = row.querySelector('[id$="-product"]');
+      if (!productSelect) return;
+      const deleteChk = row.querySelector('[id$="-DELETE"]');
+      let warnEl = row.querySelector('.duplicate-warning');
+
+      const isDuplicate = !!productSelect.value
+        && counts[productSelect.value] > 1
+        && !(deleteChk && deleteChk.checked)
+        && row.style.display !== 'none';
+
+      if (isDuplicate) {
+        hasDuplicate = true;
+        productSelect.classList.add('is-invalid');
+        if (!warnEl) {
+          warnEl = document.createElement('div');
+          warnEl.className = 'text-danger small duplicate-warning mt-1';
+          warnEl.textContent = '⚠ Este producto ya fue agregado en otra fila.';
+          productSelect.insertAdjacentElement('afterend', warnEl);
+        }
+      } else {
+        productSelect.classList.remove('is-invalid');
+        if (warnEl) warnEl.remove();
+      }
+    });
+
+    const submitBtn = document.querySelector('#invoice-form button[type="submit"]');
+    if (submitBtn) submitBtn.disabled = hasDuplicate;
+
+    return hasDuplicate;
+  }
+
+  // Carga el precio del producto seleccionado vía AJAX
+  function loadProductPrice(row, productId) {
+    if (!productId) return;
+    fetch(PRICE_API + productId + '/')
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        const priceInput = row.querySelector('[id$="-unit_price"]');
+        if (priceInput) {
+          priceInput.value = data.unit_price;
+          recalcRow(row);
+        }
+      })
+      .catch(function (err) { console.error('Error fetching price:', err); });
+  }
+
+  // Asigna eventos a una fila
+  function bindRowEvents(row) {
+    const productSelect = row.querySelector('[id$="-product"]');
+    const qtyInput = row.querySelector('[id$="-quantity"]');
+    const priceInput = row.querySelector('[id$="-unit_price"]');
+    const deleteChk = row.querySelector('[id$="-DELETE"]');
+    const removeBtn = row.querySelector('.btn-remove-row');
+
+    if (productSelect) {
+      productSelect.addEventListener('change', function () {
+        loadProductPrice(row, this.value);
+        updateProductAvailability();
+        checkDuplicateProducts();
+      });
+      // Si ya tiene producto seleccionado al cargar (edición), calcular
+      if (productSelect.value) recalcRow(row);
+    }
+    if (qtyInput) {
+      qtyInput.addEventListener('input', function () { recalcRow(row); });
+    }
+    if (priceInput) {
+      priceInput.addEventListener('input', function () { recalcRow(row); });
+    }
+    if (deleteChk) {
+      deleteChk.addEventListener('change', function () {
+        row.style.opacity = this.checked ? '0.4' : '1';
+        recalcTotals();
+        updateProductAvailability();
+        checkDuplicateProducts();
+      });
+    }
+    if (removeBtn) {
+      removeBtn.addEventListener('click', function () {
+        removeRow(row);
+      });
+    }
+  }
+
+  // ── Eliminar una fila (botón "Eliminar") ──
+  // Distingue entre dos casos:
+  //   1) Fila que representa una línea YA GUARDADA en la base de datos
+  //      (su input oculto form-X-id trae un pk). En este caso NO se
+  //      remueve del DOM: se marca su checkbox oculto form-X-DELETE como
+  //      checked = true y se oculta visualmente. Así, cuando el usuario
+  //      guarde el formulario, Django la reconoce en el POST y
+  //      formset.save() la elimina correctamente en el backend.
+  //   2) Fila nueva que el usuario agregó y aún no existe en la base de
+  //      datos (form-X-id vacío). En este caso sí se puede remover por
+  //      completo del DOM, y se reindexan las filas restantes para que
+  //      TOTAL_FORMS del Management Form quede sincronizado con la
+  //      cantidad real de filas que se van a enviar.
+  function removeRow(row) {
+    const idInput = row.querySelector('[id$="-id"]');
+    const deleteChk = row.querySelector('[id$="-DELETE"]');
+    const hasExistingPk = !!(idInput && idInput.value);
+
+    if (hasExistingPk) {
+      if (deleteChk) deleteChk.checked = true;
+      row.style.display = 'none';
+    } else {
+      row.remove();
+    }
+
+    reindexRows();
+    recalcTotals();
+    updateProductAvailability();
+    checkDuplicateProducts();
+  }
+
+  // Agrega una nueva fila vacía a partir de la plantilla limpia (rowTemplate)
+  document.getElementById('btn-add-row').addEventListener('click', function () {
+    const tbody = document.getElementById('detail-body');
+    const formIdx = getTotalForms();
+
+    const newRow = rowTemplate.cloneNode(true);
+    newRow.innerHTML = newRow.innerHTML
+      .replace(new RegExp(PREFIX + '-0-', 'g'), PREFIX + '-' + formIdx + '-');
+
+    tbody.appendChild(newRow);
+    setTotalForms(formIdx + 1);
+    bindRowEvents(newRow);
+    updateProductAvailability();
+    checkDuplicateProducts();
+  });
+
+  // Inicializar eventos en todas las filas existentes al cargar la página
+  document.querySelectorAll('#detail-body .detail-row').forEach(function (row) {
+    bindRowEvents(row);
+  });
+
+  recalcTotals();
+  updateProductAvailability();
+  checkDuplicateProducts();
+})();
+</script>
+{% endblock %}

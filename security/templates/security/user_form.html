@@ -1,0 +1,44 @@
+{% extends 'billing/base.html' %}
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-5">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-user-shield text-dark fa-3x mb-3"></i>
+                        <h2 class="fw-bold h4">Registrar Nuevo Trabajador</h2>
+                        <p class="text-muted small">El usuario creado nacerá sin rol. Luego podrás asignarle su jerarquía.</p>
+                    </div>
+
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        {% for field in form %}
+                            <div class="mb-3">
+                                <label class="form-label text-dark small fw-bold">{{ field.label }}</label>
+                                {{ field }}
+                                {% if field.errors %}
+                                    {% for error in field.errors %}
+                                        <div class="text-danger small mt-1"><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+
+                        {% if form.non_field_errors %}
+                            {% for error in form.non_field_errors %}
+                                <div class="alert alert-danger rounded-3 small p-2"><i class="fas fa-exclamation-triangle me-2"></i>{{ error }}</div>
+                            {% endfor %}
+                        {% endif %}
+
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-dark btn-lg rounded-3 shadow-sm fs-6">Crear Cuenta de Usuario</button>
+                            <a href="{% url 'user_list' %}" class="btn btn-light btn-lg rounded-3 fs-6 text-muted">Cancelar y Volver</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

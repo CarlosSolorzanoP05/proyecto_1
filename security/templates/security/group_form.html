@@ -1,0 +1,61 @@
+{% extends 'billing/base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-7">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-5">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-folder-plus text-dark fa-3x mb-3"></i>
+                        <h2 class="fw-bold h4">Crear Nuevo Rol / Grupo</h2>
+                        <p class="text-muted small">Registra un nuevo rango en el sistema y define qué módulos podrá ver. Una vez creado, podrás asignárselo a cualquier trabajador.</p>
+                    </div>
+
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+
+                        <!-- Nombre del Rol -->
+                        <div class="mb-4">
+                            <label class="form-label text-dark small fw-bold">{{ form.name.label }}</label>
+                            {{ form.name }}
+                            {% for error in form.name.errors %}
+                                <div class="text-danger small mt-1"><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Permisos de Módulo (checkboxes dinámicos) -->
+                        <div class="mb-4">
+                            <label class="form-label text-dark small fw-bold d-block mb-2">
+                                {{ form.permissions.label }}
+                            </label>
+                            <div class="row row-cols-1 row-cols-sm-2 g-2 border rounded-3 p-3 bg-light bg-opacity-50">
+                                {% for checkbox in form.permissions %}
+                                <div class="col">
+                                    <div class="form-check">
+                                        {{ checkbox.tag }}
+                                        <label class="form-check-label small" for="{{ checkbox.id_for_label }}">
+                                            {{ checkbox.choice_label }}
+                                        </label>
+                                    </div>
+                                </div>
+                                {% empty %}
+                                <p class="text-muted small mb-0">No hay módulos disponibles para asignar.</p>
+                                {% endfor %}
+                            </div>
+                            {% for error in form.permissions.errors %}
+                                <div class="text-danger small mt-1"><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-dark btn-lg rounded-3 shadow-sm fs-6">Guardar Nuevo Rol</button>
+                            <a href="{% url 'user_list' %}" class="btn btn-light btn-lg rounded-3 fs-6 text-muted">Cancelar y Volver</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

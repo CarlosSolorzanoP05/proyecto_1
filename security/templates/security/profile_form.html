@@ -1,0 +1,114 @@
+{% extends 'billing/base.html' %}
+{% block title %}Mis Datos{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="mb-0"><i class="fa-solid fa-id-card me-2 text-muted"></i>Mis Datos</h2>
+</div>
+
+<div class="row g-4">
+  {# ── Columna izquierda: saldo y rango (solo lectura) ── #}
+  <div class="col-md-4">
+    <div class="card shadow-sm border-0 rounded-4 mb-4">
+      <div class="card-body text-center p-4">
+        <div class="text-muted small text-uppercase fw-semibold mb-1">Rango / Rol</div>
+        <span class="badge bg-secondary fs-6 px-3 py-2">{{ profile.rango }}</span>
+        <div class="text-muted small mt-2">Solo un Administrador puede cambiar tu rol.</div>
+      </div>
+    </div>
+    <div class="card shadow-sm border-0 rounded-4">
+      <div class="card-body p-4">
+        <div class="text-muted small text-uppercase fw-semibold mb-2 text-center">Mis Saldos</div>
+        <div class="row text-center g-2">
+          <div class="col-6">
+            <div class="text-muted small">Efectivo</div>
+            <div class="fs-5 fw-bold text-success">${{ profile.saldo_efectivo }}</div>
+          </div>
+          <div class="col-6">
+            <div class="text-muted small">Tarjeta</div>
+            <div class="fs-5 fw-bold text-success">${{ profile.saldo_tarjeta }}</div>
+          </div>
+        </div>
+        <div class="text-muted small mt-2 text-center">Puedes editar estos valores manualmente en el formulario &rarr;</div>
+      </div>
+    </div>
+  </div>
+
+  {# ── Columna derecha: datos editables ── #}
+  <div class="col-md-8">
+    <div class="card shadow-sm border-0 rounded-4">
+      <div class="card-header bg-dark text-white border-0 py-3">
+        <h5 class="mb-0">Información Personal</h5>
+      </div>
+      <div class="card-body p-4">
+        <form method="post">
+          {% csrf_token %}
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">{{ form.first_name.label }}</label>
+            {{ form.first_name }}
+            {% for error in form.first_name.errors %}
+              <div class="text-danger small mt-1">{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">{{ form.last_name.label }}</label>
+            {{ form.last_name }}
+            {% for error in form.last_name.errors %}
+              <div class="text-danger small mt-1">{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">{{ form.email.label }}</label>
+            {{ form.email }}
+            {% for error in form.email.errors %}
+              <div class="text-danger small mt-1">{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold text-muted">Nombre de Usuario</label>
+            <input type="text" class="form-control" value="{{ user.username }}" disabled>
+            <div class="form-text">El nombre de usuario no se puede modificar.</div>
+          </div>
+
+          <hr class="my-4">
+          <h6 class="text-uppercase text-muted small fw-semibold mb-3">Cédula y Saldos</h6>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">{{ form.cedula.label }}</label>
+            {{ form.cedula }}
+            {% for error in form.cedula.errors %}
+              <div class="text-danger small mt-1">{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <div class="row g-3 mb-4">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">{{ form.saldo_efectivo.label }}</label>
+              {{ form.saldo_efectivo }}
+              {% for error in form.saldo_efectivo.errors %}
+                <div class="text-danger small mt-1">{{ error }}</div>
+              {% endfor %}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">{{ form.saldo_tarjeta.label }}</label>
+              {{ form.saldo_tarjeta }}
+              {% for error in form.saldo_tarjeta.errors %}
+                <div class="text-danger small mt-1">{{ error }}</div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary px-4">
+            <i class="fa-solid fa-floppy-disk me-2"></i>Guardar Cambios
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

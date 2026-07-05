@@ -1,0 +1,80 @@
+{% extends 'billing/base.html' %}
+{% load security_tags %}
+{% block title %}Factura {{ invoice.invoice_number }}{% endblock %}
+{% block content %}
+
+<div class="card shadow-sm border-0 rounded-4 overflow-hidden mb-4">
+  <div class="card-header bg-dark text-white border-0 py-3 d-flex justify-content-between align-items-center">
+    <h4 class="mb-0">Factura {{ invoice.invoice_number }}</h4>
+    {% if invoice.status == 'PAGADA' %}
+      <span class="badge bg-success fs-6 px-3 py-2">PAGADA</span>
+    {% else %}
+      <span class="badge bg-warning text-dark fs-6 px-3 py-2">PENDIENTE</span>
+    {% endif %}
+  </div>
+  <div class="card-body">
+    <div class="row mb-3">
+      <div class="col-md-6">
+        <p><strong>{% if invoice.user_id %}Usuario{% else %}Cliente{% endif %}:</strong> {{ invoice.buyer_label }}</p>
+        {% if invoice.customer_id %}
+        <p><strong>Cédula/RUC:</strong> {{ invoice.customer.dni|default:"N/A" }}</p>
+        {% elif invoice.user.profile.cedula %}
+        <p><strong>Cédula:</strong> {{ invoice.user.profile.cedula }}</p>
+        {% endif %}
+        <p><strong>Método de Pago:</strong> {{ invoice.get_metodo_pago_display }}</p>
+      </div>
+      <div class="col-md-6 text-end">
+        <p><strong>Fecha:</strong> {{ invoice.invoice_date|date:"d/m/Y H:i" }}</p>
+        <p><strong>Factura N°:</strong> {{ invoice.invoice_number }}</p>
+      </div>
+    </div>
+
+    <!-- Tabla de detalles -->
+    <table class="table table-bordered">
+      <thead class="table-dark">
+        <tr>
+          <th>Producto</th>
+          <th class="text-center">Cant.</th>
+          <th class="text-end">Precio Unit.</th>
+          <th class="text-end">Subtotal</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for detail in invoice.details.all %}
+        <tr>
+          <td>{{ detail.product.name }}</td>
+          <td class="text-center">{{ detail.quantity }}</td>
+          <td class="text-end">${{ detail.unit_price }}</td>
+          <td class="text-end">${{ detail.subtotal }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="3" class="text-end fw-bold">Subtotal:</td>
+          <td class="text-end">${{ invoice.subtotal }}</td>
+        </tr>
+        <tr>
+          <td colspan="3" class="text-end fw-bold">IVA (15%):</td>
+          <td class="text-end">${{ invoice.tax }}</td>
+        </tr>
+        <tr class="table-warning">
+          <td colspan="3" class="text-end fw-bold fs-5">TOTAL:</td>
+          <td class="text-end fw-bold fs-5">${{ invoice.total }}</td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+      <a href="{% url 'billing:invoice_list' %}" class="btn btn-secondary">← Volver al listado</a>
+      <div class="d-flex gap-2">
+        <a href="{% url 'billing:invoice_pdf' invoice.pk %}" class="btn btn-outline-danger">📄 Exportar PDF</a>
+        {% if user.is_superuser or user|has_group:"Administrador" or user|has_group:"Trabajador" %}
+        <a href="{% url 'billing:invoice_update' invoice.pk %}" class="btn btn-warning">✏️ Editar Factura</a>
+        <a href="{% url 'billing:invoice_delete' invoice.pk %}" class="btn btn-danger">🗑 Eliminar / Anular Factura</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

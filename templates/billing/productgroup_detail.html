@@ -1,0 +1,36 @@
+{% extends 'billing/base.html' %}
+{% block title %}{{ object.name }}{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="mb-0">📂 {{ object.name }}</h2>
+  <a href="{% url 'billing:productgroup_list' %}" class="btn btn-secondary">← Volver al listado</a>
+</div>
+
+<div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+  <div class="card-header bg-dark text-white border-0 py-3">
+    <h5 class="mb-0">Detalles del Grupo de Productos</h5>
+  </div>
+  <div class="card-body">
+    <p><strong>Nombre:</strong> {{ object.name }}</p>
+    <p>
+      <strong>Estado:</strong>
+      {% if object.is_active %}
+        <span class="badge bg-success">Activo</span>
+      {% else %}
+        <span class="badge bg-secondary">Inactivo</span>
+      {% endif %}
+    </p>
+    <p class="text-muted small mb-0">
+      Creado: {{ object.created_at|date:"d/m/Y H:i" }} &middot;
+      Actualizado: {{ object.updated_at|date:"d/m/Y H:i" }}
+    </p>
+
+    <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+      <a href="{% url 'billing:productgroup_update' object.pk %}" class="btn btn-warning">✏️ Editar Grupo</a>
+      <a href="{% url 'billing:productgroup_delete' object.pk %}" class="btn btn-danger">🗑 Eliminar Grupo</a>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

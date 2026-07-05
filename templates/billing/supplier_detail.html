@@ -1,0 +1,48 @@
+{% extends 'billing/base.html' %}
+{% block title %}{{ object.name }}{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="mb-0">🚚 {{ object.name }}</h2>
+  <a href="{% url 'billing:supplier_list' %}" class="btn btn-secondary">← Volver al listado</a>
+</div>
+
+<div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+  <div class="card-header bg-dark text-white border-0 py-3">
+    <h5 class="mb-0">Detalles del Proveedor</h5>
+  </div>
+  <div class="card-body">
+    <div class="row g-3">
+      <div class="col-md-6">
+        <p><strong>Razón Social:</strong> {{ object.name }}</p>
+        <p><strong>Contacto:</strong> {{ object.contact_name|default:"—" }}</p>
+      </div>
+      <div class="col-md-6">
+        <p><strong>Correo:</strong>
+          {% if object.email %}<a href="mailto:{{ object.email }}">{{ object.email }}</a>{% else %}—{% endif %}
+        </p>
+        <p><strong>Teléfono:</strong> {{ object.phone|default:"—" }}</p>
+      </div>
+    </div>
+    <p><strong>Dirección:</strong> {{ object.address|default:"—" }}</p>
+    <p>
+      <strong>Estado:</strong>
+      {% if object.is_active %}
+        <span class="badge bg-success">Activo</span>
+      {% else %}
+        <span class="badge bg-secondary">Inactivo</span>
+      {% endif %}
+    </p>
+    <p class="text-muted small mb-0">
+      Creado: {{ object.created_at|date:"d/m/Y H:i" }} &middot;
+      Actualizado: {{ object.updated_at|date:"d/m/Y H:i" }}
+    </p>
+
+    <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+      <a href="{% url 'billing:supplier_update' object.pk %}" class="btn btn-warning">✏️ Editar Proveedor</a>
+      <a href="{% url 'billing:supplier_delete' object.pk %}" class="btn btn-danger">🗑 Eliminar Proveedor</a>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

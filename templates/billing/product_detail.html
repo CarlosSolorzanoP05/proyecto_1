@@ -1,0 +1,136 @@
+{% extends 'billing/base.html' %}
+{% load security_tags %}
+{% block title %}{{ product.name }}{% endblock %}
+{% block content %}
+
+<style>
+  .pm-image-panel {
+    background: linear-gradient(160deg,#f0f4ff 0%,#e8eeff 100%);
+    border-radius: .75rem;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    min-height: 240px; padding: 1.5rem 1rem;
+    border: 1px solid #dde3f5;
+  }
+  .pm-photo-img {
+    width: 160px; height: 160px;
+    object-fit: cover; border-radius: .75rem;
+    box-shadow: 0 8px 24px rgba(0,0,0,.15);
+    margin-bottom: 1rem;
+  }
+  .pm-product-name-badge { font-size:.9rem; font-weight:600; color:#4a5568; text-align:center; word-break:break-word; }
+  .pm-info-row {
+    display:flex; align-items:flex-start;
+    padding:.6rem 0; border-bottom:1px solid #f0f0f0; font-size:.95rem;
+  }
+  .pm-info-row:last-child { border-bottom:none; }
+  .pm-label { min-width:150px; font-weight:600; color:#6c757d; display:flex; align-items:center; gap:.4rem; }
+  .pm-value { color:#212529; flex:1; }
+  .pm-price-big { font-size:1.9rem; font-weight:800; color:#0f3460; letter-spacing:-.02em; }
+  .pm-stock-badge { font-size:.9rem; padding:.3rem .75rem; border-radius:.5rem; font-weight:700; }
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="mb-0">📦 {{ product.name }}</h2>
+  <a href="{% url 'billing:product_list' %}" class="btn btn-secondary">← Volver al listado</a>
+</div>
+
+<div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+  <div class="card-header bg-dark text-white border-0 py-3">
+    <h5 class="mb-0">Detalles del Producto</h5>
+  </div>
+  <div class="card-body p-4">
+    <div class="row g-4 align-items-start">
+
+      {# Columna izquierda: imagen #}
+      <div class="col-md-4">
+        <div class="pm-image-panel">
+          {% if product.photo %}
+            <img src="{{ product.photo.url }}" alt="{{ product.name }}" class="pm-photo-img">
+          {% else %}
+            <img src="https://placehold.co/240x240?text=No+Image" alt="No image" class="pm-photo-img">
+          {% endif %}
+          <div class="pm-product-name-badge mt-2">{{ product.name }}</div>
+          <div class="mt-3 text-center">
+            <span class="badge bg-secondary fs-6 px-3 py-2">#{{ product.pk }}</span>
+          </div>
+        </div>
+      </div>
+
+      {# Columna derecha: datos #}
+      <div class="col-md-8">
+        <div class="mb-3 pb-3 border-bottom">
+          <div class="text-muted small text-uppercase fw-semibold mb-1">Precio Unitario</div>
+          <div class="pm-price-big">${{ product.unit_price }}</div>
+        </div>
+
+        <div class="pm-info-row">
+          <span class="pm-label">🏷️ Nombre</span>
+          <span class="pm-value fw-semibold">{{ product.name }}</span>
+        </div>
+        <div class="pm-info-row">
+          <span class="pm-label">📝 Descripción</span>
+          <span class="pm-value text-muted">{{ product.description|default:"—" }}</span>
+        </div>
+        <div class="pm-info-row">
+          <span class="pm-label">🏢 Marca</span>
+          <span class="pm-value">{{ product.brand.name }}</span>
+        </div>
+        <div class="pm-info-row">
+          <span class="pm-label">📂 Grupo</span>
+          <span class="pm-value">{{ product.group.name }}</span>
+        </div>
+        <div class="pm-info-row">
+          <span class="pm-label">📦 Stock</span>
+          <span class="pm-value">
+            {% if product.stock <= 5 %}
+              <span class="badge pm-stock-badge bg-danger">{{ product.stock }}</span>
+            {% elif product.stock <= 20 %}
+              <span class="badge pm-stock-badge bg-warning text-dark">{{ product.stock }}</span>
+            {% else %}
+              <span class="badge pm-stock-badge bg-success">{{ product.stock }}</span>
+            {% endif %}
+            <span class="text-muted small ms-1">unidades</span>
+          </span>
+        </div>
+        <div class="pm-info-row">
+          <span class="pm-label">✅ Estado</span>
+          <span class="pm-value">
+            {% if product.is_active %}
+              <span class="badge fs-6 px-3 py-1 bg-success">Activo</span>
+            {% else %}
+              <span class="badge fs-6 px-3 py-1 bg-secondary">Inactivo</span>
+            {% endif %}
+          </span>
+        </div>
+        <div class="pm-info-row">
+          <span class="pm-label">🚚 Proveedores</span>
+          <span class="pm-value">
+            {% for s in product.suppliers.all %}
+              <span class="badge bg-info text-dark me-1 mb-1">{{ s.name }}</span>
+            {% empty %}
+              <span class="text-muted">—</span>
+            {% endfor %}
+          </span>
+        </div>
+        <div class="pm-info-row">
+          <span class="pm-label">📅 Creado</span>
+          <span class="pm-value text-muted small">{{ product.created_at|date:"d/m/Y H:i" }}</span>
+        </div>
+        <div class="pm-info-row">
+          <span class="pm-label">🔄 Actualizado</span>
+          <span class="pm-value text-muted small">{{ product.updated_at|date:"d/m/Y H:i" }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+      {% if user.is_superuser or user|has_group:"Administrador" or user|has_group:"Trabajador" %}
+      <a href="{% url 'billing:product_update' product.pk %}" class="btn btn-warning">✏️ Editar Producto</a>
+      <a href="{% url 'billing:product_delete' product.pk %}" class="btn btn-danger">🗑 Eliminar Producto</a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends 'billing/base.html' %}
+{% block title %}Grupo de Producto{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-6">
+    <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+      <div class="card-header bg-dark text-white border-0 py-3">
+        <h4 class="mb-0">🗂️ {{ title|default:"Grupo de Producto" }}</h4>
+      </div>
+      <div class="card-body p-4">
+        <form method="post">
+          {% csrf_token %}
+
+          <div class="mb-3">
+            <label class="form-label fw-bold">nombre:</label>
+            {{ form.name }}
+            {% for error in form.name.errors %}
+              <div class="text-danger small">{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <div class="form-check form-switch mb-3">
+            {{ form.is_active }}
+            <label class="form-check-label fw-bold" for="{{ form.is_active.id_for_label }}">
+              Activo
+            </label>
+          </div>
+
+          <hr>
+          <button type="submit" class="btn btn-primary">Guardar</button>
+          <a href="{% url 'billing:productgroup_list' %}" class="btn btn-secondary">Cancelar</a>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

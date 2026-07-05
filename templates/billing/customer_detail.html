@@ -1,0 +1,67 @@
+{% extends 'billing/base.html' %}
+{% block title %}{{ object.full_name }}{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="mb-0">👤 {{ object.full_name }}</h2>
+  <a href="{% url 'billing:customer_list' %}" class="btn btn-secondary">← Volver al listado</a>
+</div>
+
+<div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+  <div class="card-header bg-dark text-white border-0 py-3">
+    <h5 class="mb-0">Detalles del Cliente</h5>
+  </div>
+  <div class="card-body">
+    <div class="row g-3">
+      <div class="col-md-6">
+        <p><strong>Cédula / RUC:</strong> {{ object.dni }}</p>
+        <p><strong>Nombre:</strong> {{ object.first_name }}</p>
+        <p><strong>Apellido:</strong> {{ object.last_name }}</p>
+      </div>
+      <div class="col-md-6">
+        <p><strong>Correo:</strong>
+          {% if object.email %}<a href="mailto:{{ object.email }}">{{ object.email }}</a>{% else %}—{% endif %}
+        </p>
+        <p><strong>Teléfono:</strong> {{ object.phone|default:"—" }}</p>
+        <p><strong>Dirección:</strong> {{ object.address|default:"—" }}</p>
+      </div>
+    </div>
+    <div class="row g-3 mt-1">
+      <div class="col-md-6">
+        <p class="mb-0"><strong>Saldo en Efectivo:</strong> <span class="text-success fw-semibold">${{ object.saldo_efectivo }}</span></p>
+      </div>
+      <div class="col-md-6">
+        <p class="mb-0"><strong>Saldo en Tarjeta:</strong> <span class="text-success fw-semibold">${{ object.saldo_tarjeta }}</span></p>
+      </div>
+    </div>
+    <p>
+      <strong>Estado:</strong>
+      {% if object.is_active %}
+        <span class="badge bg-success">Activo</span>
+      {% else %}
+        <span class="badge bg-secondary">Inactivo</span>
+      {% endif %}
+    </p>
+    <p class="text-muted small mb-0">
+      Creado: {{ object.created_at|date:"d/m/Y H:i" }} &middot;
+      Actualizado: {{ object.updated_at|date:"d/m/Y H:i" }}
+    </p>
+
+    {% if object.profile %}
+    <hr>
+    <h6 class="fw-semibold">Perfil Extendido</h6>
+    <div class="row g-3">
+      <div class="col-md-4"><strong>Tipo de Contribuyente:</strong> {{ object.profile.get_taxpayer_type_display }}</div>
+      <div class="col-md-4"><strong>Condiciones de Pago:</strong> {{ object.profile.get_payment_terms_display }}</div>
+      <div class="col-md-4"><strong>Límite de Crédito:</strong> ${{ object.profile.credit_limit }}</div>
+    </div>
+    {% endif %}
+
+    <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+      <a href="{% url 'billing:customer_update' object.pk %}" class="btn btn-warning">✏️ Editar Cliente</a>
+      <a href="{% url 'billing:customer_delete' object.pk %}" class="btn btn-danger">🗑 Eliminar Cliente</a>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

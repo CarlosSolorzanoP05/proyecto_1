@@ -1,0 +1,73 @@
+{% extends 'billing/base.html' %}
+{% block content %}
+<div class="container-fluid px-4 mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">Control de Usuarios y Roles</h1>
+            <p class="text-muted small mb-0">Listado general de trabajadores y sus permisos en el sistema.</p>
+        </div>
+        <div>
+            <a href="{% url 'user_create' %}" class="btn btn-dark shadow-sm rounded-3 me-2">
+                <i class="fas fa-user-plus me-2"></i>Nuevo Trabajador
+            </a>
+            <a href="{% url 'user_roles' %}" class="btn btn-outline-dark shadow-sm rounded-3 me-2">
+                <i class="fas fa-user-shield me-2"></i>Asignar Rol
+            </a>
+            <a href="{% url 'group_create' %}" class="btn btn-outline-dark shadow-sm rounded-3">
+                <i class="fas fa-folder-plus me-2"></i>Crear Nuevo Rol
+            </a>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 bg-white">
+                    <thead class="table-dark">
+                        <tr>
+                            <th class="ps-4">Usuario</th>
+                            <th>Nombre Completo</th>
+                            <th>Correo Electrónico</th>
+                            <th>Rol / Grupo Asignado</th>
+                            <th class="pe-4 text-end">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for u in users %}
+                        <tr>
+                            <td class="ps-4 fw-bold text-dark">{{ u.username }}</td>
+                            <td>{{ u.get_full_name|default:"Sin nombre registrado" }}</td>
+                            <td>{{ u.email|default:"—" }}</td>
+                            <td>
+                                {% for g in u.groups.all %}
+                                    <span class="badge bg-dark rounded-pill px-3 py-2 text-white shadow-sm">{{ g.name }}</span>
+                                {% empty %}
+                                    {% if u.is_superuser %}
+                                        <span class="badge bg-primary rounded-pill px-3 py-2 shadow-sm">SuperAdmin</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary rounded-pill px-3 py-2 text-white">Sin Rol Asignado</span>
+                                    {% endif %}
+                                {% endfor %}
+                            </td>
+                            <td class="pe-4 text-end">
+                                {% if u.is_active %}
+                                    <span class="badge bg-success bg-opacity-10 text-success rounded-3 px-3 py-2">Activo</span>
+                                {% else %}
+                                    <span class="badge bg-danger bg-opacity-10 text-danger rounded-3 px-3 py-2">Inactivo</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center py-5 text-muted">
+                                <i class="fas fa-users fa-2x mb-3 d-block"></i>No se encontraron usuarios registrados.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

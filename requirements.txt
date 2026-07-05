@@ -1,0 +1,10 @@
+# --- Django y dependencias del ORM ---
+Django==6.0.6
+asgiref==3.11.1
+sqlparse==0.5.3
+tzdata==2026.2
+
+# --- Utilidades del proyecto ---
+openpyxl>=3.1.0
+reportlab>=4.2.0
+Pillow>=10.0.0

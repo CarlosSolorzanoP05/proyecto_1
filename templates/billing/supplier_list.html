@@ -1,0 +1,64 @@
+{% extends 'billing/base.html' %}
+{% block title %}Proveedores{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="mb-0">🚚 Proveedores</h2>
+  <a href="{% url 'billing:supplier_create' %}" class="btn btn-primary">+ Nuevo Proveedor</a>
+</div>
+
+{# ── Exportación PDF / Excel (misma lógica que ExportMixin usa en Productos/Compras) ── #}
+<div class="d-flex justify-content-end gap-2 mb-3">
+  <a href="?export=excel" class="btn btn-success">📊 Exportar Excel</a>
+  <a href="?export=pdf" class="btn btn-danger">📄 Exportar PDF</a>
+</div>
+
+<div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+  <div class="card-header bg-dark text-white border-0 py-3">
+    <h5 class="mb-0">Listado de Proveedores</h5>
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-hover align-middle bg-white rounded-3 shadow-sm overflow-hidden mb-0">
+      <thead class="table-dark">
+        <tr>
+          <th>Razón Social</th>
+          <th>Contacto</th>
+          <th>Correo</th>
+          <th>Teléfono</th>
+          <th class="text-center">Activo</th>
+          <th class="text-center">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+        <tr>
+          <td class="fw-semibold">{{ item.name }}</td>
+          <td>{{ item.contact_name|default:"—" }}</td>
+          <td>
+            {% if item.email %}
+              <a href="mailto:{{ item.email }}" class="text-decoration-none">{{ item.email }}</a>
+            {% else %}—{% endif %}
+          </td>
+          <td>{{ item.phone|default:"—" }}</td>
+          <td class="text-center">
+            {% if item.is_active %}
+              <span class="badge bg-success">Activo</span>
+            {% else %}
+              <span class="badge bg-secondary">Inactivo</span>
+            {% endif %}
+          </td>
+          <td class="text-center text-nowrap">
+            <a href="{% url 'billing:supplier_detail' item.pk %}" class="btn btn-sm btn-info text-white">👁 Ver Detalle</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6" class="text-center text-muted py-4">No se encontraron proveedores.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}
